@@ -1,0 +1,13 @@
+<clickhouse>
+    <users>
+        <admin>
+            <profile>default</profile>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+            <password>admin123</password>
+            <quota>default</quota>
+            <access_management>1</access_management>
+        </admin>
+    </users>
+</clickhouse>

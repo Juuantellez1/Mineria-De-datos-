@@ -1,0 +1,68 @@
+services:
+
+  postgres_server:
+    build: ./postgresql
+    container_name: postgres_server
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lab_user -d retail_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  clickhouse_server:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: clickhouse_server
+    restart: always
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse/config:/etc/clickhouse-server/users.d
+      - ./clickhouse/init:/docker-entrypoint-initdb.d
+    environment:
+      CLICKHOUSE_DB: analytics
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: admin123
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+
+  jupyter:
+    image: jupyter/scipy-notebook:python-3.10
+    container_name: taller_jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+    environment:
+      JUPYTER_TOKEN: taller_dw
+    depends_on:
+      - clickhouse_server
+      - postgres_server
+    command: >
+      bash -c "
+      pip install -r /home/jovyan/work/requirements.txt && start-notebook.sh
+      "
+
+  superset:
+    build: ./superset
+    container_name: superset
+    ports:
+      - "8088:8088"
+    environment:
+      SUPERSET_SECRET_KEY: supersecretkey
+    depends_on:
+      - clickhouse_server
+      - postgres_server
+    volumes:
+      - superset_home:/app/superset_home
+    command: ["/app/superset_init.sh"]
+
+volumes:
+  postgres_data:
+  clickhouse_data:
+  superset_home:

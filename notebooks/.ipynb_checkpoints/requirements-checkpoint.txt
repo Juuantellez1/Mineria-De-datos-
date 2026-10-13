@@ -1,0 +1,6 @@
+SQLAlchemy
+pandas
+matplotlib
+psycopg2-binary
+clickhouse-connect
+pyarrow
